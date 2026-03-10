@@ -5,14 +5,18 @@ import httpx
 from pydantic import BaseModel
 from typing import List, Optional
 
-# --- CONFIGURAÇÃO DE LOGS (OPCIONAL) ---
+# --- CONFIGURAÇÃO DE LOGS (OPCIONAL/EXTRA) ---
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("PokeAPI-Ebac")
 
-app = FastAPI(title="EBAC PokeBackend", description="API filtrada da PokéAPI")
+app = FastAPI(
+    title="EBAC PokeBackend", 
+    description="API filtrada da PokéAPI com Pydantic e Logs",
+    version="1.0.0"
+)
 
 # --- CONFIGURAÇÃO DE CORS ---
 app.add_middleware(
@@ -54,8 +58,13 @@ async def list_pokemons(limit: int = Query(20, ge=1, le=100), offset: int = Quer
     url = f"https://pokeapi.co/api/v2/pokemon?limit={limit}&offset={offset}"
     
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        return response.json()
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Erro ao acessar PokeAPI: {e}")
+            raise HTTPException(status_code=500, detail="Erro ao buscar lista de Pokémons")
 
 @app.get("/pokemons/{pokemon_id}", response_model=PokemonDetail, tags=["Pokemons"])
 async def get_pokemon_detail(pokemon_id: str):
@@ -67,12 +76,15 @@ async def get_pokemon_detail(pokemon_id: str):
         
         if response.status_code == 404:
             logger.warning(f"Pokemon não encontrado: {pokemon_id}")
-            # --- EXCEÇÃO PERSONALIZADA (OPCIONAL) ---
-            raise HTTPException(status_code=404, detail=f"Pokémon '{pokemon_id}' não encontrado na base de dados.")
+            # EXCEÇÃO PERSONALIZADA
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Pokémon '{pokemon_id}' não encontrado na base de dados oficial."
+            )
         
         data = response.json()
         
-        # Filtragem seletiva dos dados
+        # Filtragem seletiva dos dados (Requisito obrigatório)
         filtered_data = {
             "id": data["id"],
             "name": data["name"],
@@ -81,7 +93,4 @@ async def get_pokemon_detail(pokemon_id: str):
             "types": [t["type"]["name"] for t in data["types"]],
             "sprite": data["sprites"]["front_default"]
         }
-        return pokemon_info
-
-    except requests.exceptions.RequestException:
-        raise HTTPException(status_code=500, detail="Erro interno no servidor")
+        return filtered_data
