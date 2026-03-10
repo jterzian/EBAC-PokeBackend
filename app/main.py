@@ -1,51 +1,79 @@
+import logging
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-import requests
+import httpx
+from pydantic import BaseModel
+from typing import List, Optional
 
-app = FastAPI(title="EBAC-PokeBackend", version="0.1.0")
+# --- CONFIGURAÇÃO DE LOGS (OPCIONAL) ---
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger("PokeAPI-Ebac")
 
-# --- RESOLVE O ERRO DE CARREGAMENTO ETERNO (CORS) ---
+app = FastAPI(title="EBAC PokeBackend", description="API filtrada da PokéAPI")
+
+# --- CONFIGURAÇÃO DE CORS ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-BASE_URL = "https://pokeapi.co/api/v2/pokemon"
+# --- MODELOS PYDANTIC (OPCIONAL/BOA PRÁTICA) ---
+class PokemonSummary(BaseModel):
+    name: str
+    url: str
 
-@app.get("/")
-def read_root():
-    return {"message": "PokeAPI Wrapper da EBAC está online!"}
+class PokemonListResponse(BaseModel):
+    count: int
+    next: Optional[str]
+    previous: Optional[str]
+    results: List[PokemonSummary]
 
-# --- ENDPOINT DE LISTAGEM COM PAGINAÇÃO (EXIGIDO PELO PROFESSOR) ---
-@app.get("/pokemons")
-def list_pokemons(
-    limit: int = Query(default=10, ge=1, le=100), 
-    offset: int = Query(default=0, ge=0)
-):
-    try:
-        response = requests.get(f"{BASE_URL}?limit={limit}&offset={offset}")
-        response.raise_for_status()
+class PokemonDetail(BaseModel):
+    id: int
+    name: str
+    height: int
+    weight: int
+    types: List[str]
+    sprite: str
+
+# --- ENDPOINTS ---
+
+@app.get("/", tags=["Root"])
+async def read_root():
+    logger.info("Endpoint Root acessado")
+    return {"message": "Welcome to the EBAC PokeAPI!", "status": "online"}
+
+@app.get("/pokemons", response_model=PokemonListResponse, tags=["Pokemons"])
+async def list_pokemons(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0)):
+    logger.info(f"Listagem solicitada: limit={limit}, offset={offset}")
+    url = f"https://pokeapi.co/api/v2/pokemon?limit={limit}&offset={offset}"
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
         return response.json()
-    except requests.exceptions.RequestException:
-        raise HTTPException(status_code=500, detail="Erro ao conectar com a PokeAPI")
 
-# --- ENDPOINT DE BUSCA POR ID/NOME COM FILTRO DE DADOS ---
-@app.get("/pokemons/{pokemon_id}")
-def get_pokemon(pokemon_id: str):
-    try:
-        response = requests.get(f"{BASE_URL}/{pokemon_id.lower()}")
+@app.get("/pokemons/{pokemon_id}", response_model=PokemonDetail, tags=["Pokemons"])
+async def get_pokemon_detail(pokemon_id: str):
+    logger.info(f"Busca detalhada do pokemon: {pokemon_id}")
+    url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id.lower()}"
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
         
-        # --- TRATAMENTO DE ERRO 404 (TESTADO COM AGUMON) ---
         if response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Pokémon não encontrado")
-            
+            logger.warning(f"Pokemon não encontrado: {pokemon_id}")
+            # --- EXCEÇÃO PERSONALIZADA (OPCIONAL) ---
+            raise HTTPException(status_code=404, detail=f"Pokémon '{pokemon_id}' não encontrado na base de dados.")
+        
         data = response.json()
         
-        # --- FILTRAGEM DE DADOS (REQUISITO OBRIGATÓRIO) ---
-        pokemon_info = {
+        # Filtragem seletiva dos dados
+        filtered_data = {
             "id": data["id"],
             "name": data["name"],
             "height": data["height"],
