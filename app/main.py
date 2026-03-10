@@ -5,7 +5,7 @@ import httpx
 from pydantic import BaseModel
 from typing import List, Optional
 
-# --- CONFIGURAÇÃO DE LOGS (OPCIONAL/EXTRA) ---
+# --- CONFIGURAÇÃO DE LOGS ---
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -14,7 +14,7 @@ logger = logging.getLogger("PokeAPI-Ebac")
 
 app = FastAPI(
     title="EBAC PokeBackend", 
-    description="API filtrada da PokéAPI com Pydantic e Logs",
+    description="API filtrada da PokéAPI com Pydantic, Logs e CI/CD",
     version="1.0.0"
 )
 
@@ -26,7 +26,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- MODELOS PYDANTIC (OPCIONAL/BOA PRÁTICA) ---
+# --- MODELOS PYDANTIC (Validação de Dados) ---
 class PokemonSummary(BaseModel):
     name: str
     url: str
@@ -50,7 +50,8 @@ class PokemonDetail(BaseModel):
 @app.get("/", tags=["Root"])
 async def read_root():
     logger.info("Endpoint Root acessado")
-    return {"message": "Welcome to the EBAC PokeAPI!", "status": "online"}
+    # A frase abaixo DEVE ser exatamente esta para passar no seu teste unitário
+    return {"message": "PokeAPI Wrapper da EBAC está online!"}
 
 @app.get("/pokemons", response_model=PokemonListResponse, tags=["Pokemons"])
 async def list_pokemons(limit: int = Query(20, ge=1, le=100), offset: int = Query(0, ge=0)):
@@ -76,7 +77,6 @@ async def get_pokemon_detail(pokemon_id: str):
         
         if response.status_code == 404:
             logger.warning(f"Pokemon não encontrado: {pokemon_id}")
-            # EXCEÇÃO PERSONALIZADA
             raise HTTPException(
                 status_code=404, 
                 detail=f"Pokémon '{pokemon_id}' não encontrado na base de dados oficial."
@@ -84,13 +84,13 @@ async def get_pokemon_detail(pokemon_id: str):
         
         data = response.json()
         
-        # Filtragem seletiva dos dados (Requisito obrigatório)
+        # Filtragem seletiva dos dados conforme requisito do projeto
         filtered_data = {
             "id": data["id"],
             "name": data["name"],
             "height": data["height"],
             "weight": data["weight"],
             "types": [t["type"]["name"] for t in data["types"]],
-            "sprite": data["sprites"]["front_default"]
+            "sprite": data["sprites"]["front_default"] or ""
         }
         return filtered_data
