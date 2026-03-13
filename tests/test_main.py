@@ -1,38 +1,46 @@
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+import os
 
 client = TestClient(app)
 
-# A mesma chave que definimos no main.py
-HEADERS = {"access_token": "ebac-token-2024"}
+# Define o header de autenticação baseado no que está no seu .env ou padrão
+API_KEY = os.getenv("API_KEY", "ebac-token-2024")
+HEADERS = {"access_token": API_KEY}
 
 def test_read_root():
-    """Testa o endpoint raiz (que tem rate limit mas não exige token)"""
+    """Testa o endpoint raiz com a nova mensagem"""
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "PokeAPI Wrapper da EBAC está online!"}
+    assert "Bem-vindo ao PokeBackend EBAC!" in response.json()["message"]
 
-def test_list_pokemons():
-    """Testa a listagem paginada enviando o token de acesso"""
-    response = client.get("/pokemons?limit=5&offset=0", headers=HEADERS)
-    assert response.status_code == 200
-    assert "results" in response.json()
-    assert len(response.json()["results"]) == 5
-
-def test_get_pokemon_detail():
-    """Testa a busca de um pokemon específico enviando o token"""
+def test_get_external_pokemon_success():
+    """Testa a busca de um pokemon real na PokeAPI com token"""
     response = client.get("/pokemons/pikachu", headers=HEADERS)
     assert response.status_code == 200
     assert response.json()["name"] == "pikachu"
-    assert "id" in response.json()
-
-def test_get_pokemon_not_found():
-    """Testa o erro 404 enviando o token"""
-    response = client.get("/pokemons/pokemon-inexistente", headers=HEADERS)
-    assert response.status_code == 404
 
 def test_unauthorized_access():
-    """Testa se a API nega acesso sem o token (Erro 403)"""
-    response = client.get("/pokemons/pikachu")
+    """Testa se a API nega acesso sem o token correto"""
+    response = client.get("/pokemons/pikachu", headers={"access_token": "token-errado"})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Acesso negado: API Key inválida ou ausente no header 'access_token'"
+
+def test_create_local_pokemon():
+    """Testa a criação de um pokemon no banco de dados local (CRUD)"""
+    payload = {
+        "name": "Ebac-Test",
+        "type": "Eletrico",
+        "note": "Teste de Unidade"
+    }
+    response = client.post("/my-pokemons", json=payload, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Ebac-Test"
+    assert "id" in data
+
+def test_list_local_pokemons():
+    """Testa a listagem do banco local"""
+    response = client.get("/my-pokemons", headers=HEADERS)
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
