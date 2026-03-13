@@ -1,7 +1,16 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
-class PokemonSchema(BaseModel):
+# Schemas para a PokeAPI (Externo)
+class PokemonSummary(BaseModel):
+    name: str
+    url: str
+
+class PokemonListResponse(BaseModel):
+    count: int
+    results: List[PokemonSummary]
+
+class PokemonDetail(BaseModel):
     id: int
     name: str
     height: int
@@ -9,8 +18,13 @@ class PokemonSchema(BaseModel):
     types: List[str]
     sprite: str
 
-class PokemonListResponse(BaseModel):
-    total: int
-    next: Optional[str]
-    previous: Optional[str]
-    results: List[dict]
+# Schemas para o CRUD Local (SQLAlchemy)
+class PokemonCreate(BaseModel):
+    name: str
+    type: str
+    note: Optional[str] = None
+
+class PokemonDB(PokemonCreate):
+    id: int
+    class Config:
+        from_attributes = True

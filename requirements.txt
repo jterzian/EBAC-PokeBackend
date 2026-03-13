@@ -5,3 +5,6 @@ pytest
 httpx
 pydantic
 slowapi
+sqlalchemy
+databases
+python-dotenv
