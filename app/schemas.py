@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
 # Schemas para a PokeAPI (Externo)
@@ -26,5 +26,5 @@ class PokemonCreate(BaseModel):
 
 class PokemonDB(PokemonCreate):
     id: int
-    class Config:
-        from_attributes = True
+    # Novo padrão do Pydantic V2 para substituir o 'class Config'
+    model_config = ConfigDict(from_attributes=True)
