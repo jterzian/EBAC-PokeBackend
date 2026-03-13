@@ -15,7 +15,7 @@ Este projeto é um **Backend robusto** desenvolvido em Python com FastAPI, que f
 
 1. **Clone o repositório:**
    ```bash
-   git clone [https://github.com/SEU_USUARIO/EBAC-PokeBackend.git](https://github.com/SEU_USUARIO/EBAC-PokeBackend.git)
+   git clone [https://github.com/jterzian/EBAC-PokeBackend.git](https://github.com/jterzian/EBAC-PokeBackend.git)
    cd EBAC-PokeBackend
 Configure o ambiente:
 Crie um arquivo .env na raiz com as seguintes chaves:
