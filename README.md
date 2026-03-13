@@ -1,69 +1,45 @@
-Sem problemas! Aqui está o README final, completinho e estilizado para você copiar e colar. Ele já inclui os escudos (badges), a tabela de endpoints e as instruções de segurança.
+# 🚀 PokeBackend EBAC - Projeto Final
 
-Basta substituir o conteúdo do seu arquivo README.md por este:
+Este projeto é um **Backend robusto** desenvolvido em Python com FastAPI, que funciona como um wrapper para a PokéAPI externa, mas também possui sua própria camada de persistência de dados (CRUD Local).
 
-Markdown
-# EBAC PokeBackend PRO 🚀
+## 🛠️ O que foi implementado? (Destaques Técnicos)
 
-![Python](https://img.shields.io/badge/python-3.11-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100.0-05998b.svg)
-![Tests](https://img.shields.io/github/actions/workflow/status/jterzian/EBAC-PokeBackend/main.yml?branch=main&label=tests)
-![Deploy](https://img.shields.io/badge/deploy-Render-430098.svg)
+- **Persistência com SQLAlchemy 2.0**: Integração com banco de dados SQLite para salvar, listar e deletar Pokémons customizados.
+- **Segurança (API Key)**: Endpoints protegidos por autenticação via Header (`access_token`).
+- **Arquitetura em Camadas**: Organização profissional dividida em `models`, `schemas`, `services`, `utils` e `database`.
+- **Assincronismo**: Uso de `httpx` para chamadas externas eficientes e não bloqueantes.
+- **Validação Rigorosa**: Uso do Pydantic V2 para garantir a integridade dos dados.
+- **CI/CD Integrado**: Pipeline no GitHub Actions que executa testes automatizados (Pytest) a cada push.
 
-Esta é uma API robusta desenvolvida como projeto final para o curso de Backend Python da **EBAC**. O sistema consome a PokéAPI oficial, aplica filtros inteligentes, validação de dados e camadas de segurança profissional.
+## 🚀 Como Executar o Projeto
 
-## 🔗 Links do Projeto
-- **API em Produção:** [https://ebac-pokebackend.onrender.com/docs](https://ebac-pokebackend.onrender.com/docs)
-- **Documentação:** Swagger UI integrada.
+1. **Clone o repositório:**
+   ```bash
+   git clone [https://github.com/SEU_USUARIO/EBAC-PokeBackend.git](https://github.com/SEU_USUARIO/EBAC-PokeBackend.git)
+   cd EBAC-PokeBackend
+Configure o ambiente:
+Crie um arquivo .env na raiz com as seguintes chaves:
 
----
+Snippet de código
+API_KEY=ebac-token-2024
+DATABASE_URL=sqlite:///./test.db
+APP_TITLE=PokeBackend-EBAC
+Instale as dependências:
 
-## 🔒 Segurança e Autenticação
-Para garantir a integridade dos dados, os endpoints de Pokémons são protegidos por uma **API Key**.
+Bash
+pip install -r requirements.txt
+Inicie o servidor:
 
-* **Header Key:** `access_token`
-* **Token de Acesso:** `ebac-token-2024`
+Bash
+uvicorn app.main:app --reload
+Acesse a documentação em: http://127.0.0.1:8000/docs
 
-> **Como testar:** No Swagger UI, clique no botão verde **"Authorize"**, insira o token acima e clique em autorizar.
-
-## 🚦 Rate Limiting (Controle de Tráfego)
-Implementamos uma barreira de segurança contra abusos (Rate Limit):
-* **Limite:** 5 requisições por minuto por IP.
-* **Status de Erro:** `429 Too Many Requests`.
-
----
-
-## 📡 Endpoints Disponíveis
-
-| Método | Rota | Descrição | Autenticação |
-| :--- | :--- | :--- | :---: |
-| **GET** | `/` | Status da API e mensagem de boas-vindas | ❌ |
-| **GET** | `/pokemons` | Listagem paginada (limit/offset) | ✅ |
-| **GET** | `/pokemons/{id}` | Detalhes filtrados de um Pokémon específico | ✅ |
-
----
-
-## 🛠️ Tecnologias e Opcionais Implementados
-- [x] **Pydantic:** Validação rigorosa dos tipos de dados.
-- [x] **Logs Estruturados:** Monitoramento de acessos no servidor.
-- [x] **Tratamento de Exceções:** Erros 404 e 403 customizados.
-- [x] **CI/CD:** Pipeline automatizado com GitHub Actions (Pytest).
-- [x] **Docker:** Containerização pronta para produção.
-
-## 🐳 Como Executar Localmente
-
-### Via Docker (Recomendado)
-```bash
-docker-compose up --build
-A API ficará disponível em http://localhost:8000/docs
-
-Via Python Direto
-Instale as dependências: pip install -r requirements.txt
-
-Rode o servidor: uvicorn app.main:app --reload
-
-🧪 Testes Unitários
-Para rodar os testes e verificar a integridade da autenticação e paginação:
+🧪 Testes Automatizados
+Para rodar os testes de integração e garantir que tudo está funcionando:
 
 Bash
 pytest
+🔗 Deploy
+O projeto está configurado para deploy automático no Render e pode ser acessado publicamente através da URL fornecida no repositório.
+
+Desenvolvido por João como parte do curso de Python Backend da EBAC.
